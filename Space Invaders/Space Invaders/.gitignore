@@ -1,0 +1,54 @@
+# Archivos de compilación
+*.obj
+*.pch
+*.pdb
+*.idb
+*.ilk
+*.exe
+*.dll
+*.lib
+*.exp
+*.log
+
+# Carpetas de Visual Studio
+.vs/
+Debug/
+Release/
+x64/
+x86/
+ipch/
+out/
+bin/
+build/
+[Bb]uild*/
+
+# Archivos temporales y de usuario
+*.suo
+*.user
+*.userosscache
+*.sdf
+*.cache
+*.opensdf
+*.VC.db
+*.VC.VC.opendb
+
+# Archivos de configuración locales
+*.ncb
+*.aps
+*.res
+*.tlog
+
+# Archivos de paquetes y dependencias
+*.nuget/
+packages/
+*.cachefile
+*.tmp
+
+# Archivos generados automáticamente
+*.manifest
+*.db
+*.opendb
+
+# Otros
+Thumbs.db
+desktop.ini
