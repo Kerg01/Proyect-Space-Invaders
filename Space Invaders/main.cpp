@@ -2,15 +2,15 @@
 #include <SFML/Graphics.hpp>
 #include <vector>
 #include <time.h>      // Para 'srand' (semilla aleatoria)
-#include <limits>    // Para 'numeric_limits' (validaciÛn de entrada)
+#include <limits>    // Para 'numeric_limits' (validaci√≥n de entrada)
 #include <cstdlib>     // Para 'system' (comandos de consola)
 #include <fstream>     // Para 'ifstream' y 'ofstream' (manejo de archivos)
 #include <algorithm>   // Para 'sort' (ordenar puntuaciones)
 #include "Player.hpp"   // Clase que maneja al jugador
 #include "Bullet.hpp"   // Clase que maneja las balas
 #include "Enemie.hpp"   // Clase que maneja a los enemigos
-#include "Muro.hpp"     // Clase que maneja los muros de protecciÛn
-#include "include/json.hpp" // LibrerÌa externa para manejar archivos JSON
+#include "Muro.hpp"     // Clase que maneja los muros de protecci√≥n
+#include "include/json.hpp" // Librer√≠a externa para manejar archivos JSON
 // Colores para la consola 
 #define BRIGHT_BLACK   "\033[90m"
 #define BRIGHT_RED     "\033[91m"
@@ -24,99 +24,99 @@
 using namespace std;
 using namespace sf;
 
-// Alias para la librerÌa JSON de nlohmann
+// Alias para la librer√≠a JSON de nlohmann
 using json = nlohmann::json;
 
 // --- Prototipos de Funciones ---
 
-// Funciones de actualizaciÛn del juego (lÛgica principal)
+// Funciones de actualizaci√≥n del juego (l√≥gica principal)
 void UpdatePlayer(Player& player, Bullet& bulletPlayer); // Mover jugador y disparar
 void UpdateBulletPlayer(Bullet& bulletPlayer, vector<vector<Enemie>>& enemies);// Mover bala jugador y colisiones
 void UpdateEnemies(vector<vector<Enemie>>& enemies);// Mover enemigos y disparar
 void UpdateBulletsEnemies(Player& player);// Mover balas enemigas y colisiones
 void UpdateMuro(vector<Muro>& muro, Bullet& bulletPlayer);// Colisiones de balas con muros
 
-// Funciones de men˙ y gestiÛn
-bool showTerminalMenu();    // Muestra el men˙ principal y devuelve 'true' si se va a jugar
+// Funciones de men√∫ y gesti√≥n
+bool showTerminalMenu();    // Muestra el men√∫ principal y devuelve 'true' si se va a jugar
 void showScoreking();       // Muestra la lista de puntuaciones
 void deleteMyScore();       // Permite al usuario eliminar sus puntuaciones
-void showScorekingMenu();   // Muestra el submen˙ de Scoreking (ver, borrar, volver)
-void saveScore(bool won);   // Guarda la puntuaciÛn del jugador en un archivo JSON
+void showScorekingMenu();   // Muestra el submen√∫ de Scoreking (ver, borrar, volver)
+void saveScore(bool won);   // Guarda la puntuaci√≥n del jugador en un archivo JSON
 void showInstructions();    // Muestra la pantalla de instrucciones
-void showCredits();         // Muestra la pantalla de crÈditos
-int showPostGameMenu();     // Muestra el men˙ despuÈs de ganar o perder
+void showCredits();         // Muestra la pantalla de cr√©ditos
+int showPostGameMenu();     // Muestra el men√∫ despu√©s de ganar o perder
 
 // --- Variables Globales ---
-Texture spritesheet; // Textura principal que contiene todos los gr·ficos del juego
+Texture spritesheet; // Textura principal que contiene todos los gr√°ficos del juego
 
 int timer = 0;     // Temporizador general, usado para la cadencia de disparo enemiga
-int cadencia = 125; // Define la velocidad de disparo de los enemigos (menos es m·s r·pido)
+int cadencia = 125; // Define la velocidad de disparo de los enemigos (menos es m√°s r√°pido)
 
-int dirEnemies = 1; // DirecciÛn de movimiento de los enemigos (1 = derecha, -1 = izquierda)
-int maxX, minX;     // Coordenadas X del enemigo m·s a la derecha y m·s a la izquierda
-int cantEnemies;    // Contador total de enemigos (usado para la condiciÛn de victoria)
-int enemiesKilled = 0; // Contador de enemigos eliminados (para la puntuaciÛn)
+int dirEnemies = 1; // Direcci√≥n de movimiento de los enemigos (1 = derecha, -1 = izquierda)
+int maxX, minX;     // Coordenadas X del enemigo m√°s a la derecha y m√°s a la izquierda
+int cantEnemies;    // Contador total de enemigos (usado para la condici√≥n de victoria)
+int enemiesKilled = 0; // Contador de enemigos eliminados (para la puntuaci√≥n)
 
 vector<Bullet> bulletsEnemies; // Vector que almacena todas las balas enemigas activas
 
 // Vector temporal para almacenar las posiciones de las partes de un muro (para colisiones)
-vector<pair<int, Vector2f>> posicionMuro;// (Ìndice de parte, posiciÛn (x, y))
+vector<pair<int, Vector2f>> posicionMuro;// (√≠ndice de parte, posici√≥n (x, y))
 
 Vector2f sectionSpritesheet; // Coordenada (x, y) para seleccionar el sprite de enemigo correcto
 
-// Rect·ngulos de colisiÛn para los diferentes objetos del juego
+// Rect√°ngulos de colisi√≥n para los diferentes objetos del juego
 IntRect playerRect;
 IntRect bulletRect;// Bala del jugador
 IntRect enemieRect;// Enemigo
 IntRect muroRect;// Parte de muro
 
-// Flag (bandera) que indica si la bala del jugador est· activa en pantalla
+// Flag (bandera) que indica si la bala del jugador est√° activa en pantalla
 bool bulletActive = false;// true = activa, false = inactiva
 
 
 int main() {
-	// --- FORZAR CODIFICACI”N UTF-8 EN LA CONSOLA ---
-	// Esto arregla los caracteres extraÒos como '·' en la consola de Windows
+	// --- FORZAR CODIFICACI√ìN UTF-8 EN LA CONSOLA ---
+	// Esto arregla los caracteres extra√±os como '√°' en la consola de Windows
 	// El "> nul" oculta el mensaje "Active code page: 65001"
 	system("chcp 65001 > nul");
 
-	// --- BUCLE PRINCIPAL DE LA APLICACI”N ---
+	// --- BUCLE PRINCIPAL DE LA APLICACI√ìN ---
 	// Este bucle mantiene el programa activo hasta que el usuario elige "Salir".
 	while (true)
 	{
-		// 1. MOSTRAR MEN⁄ PRINCIPAL
-		// 'showTerminalMenu()' pausa el programa y espera la selecciÛn del usuario.
+		// 1. MOSTRAR MEN√ö PRINCIPAL
+		// 'showTerminalMenu()' pausa el programa y espera la selecci√≥n del usuario.
 		// Devuelve 'false' si el usuario elige "Salir".
 		if (!showTerminalMenu()) {
 			cout << BRIGHT_BLUE << "5Saliendo del juego...\n" << BRIGHT_WHITE;
-			return 0; // Termina la aplicaciÛn
+			return 0; // Termina la aplicaci√≥n
 		}
 
-		// 2. INICIALIZACI”N Y RESETEO DEL JUEGO
+		// 2. INICIALIZACI√ìN Y RESETEO DEL JUEGO
 		// Cargar la textura
 		if (!spritesheet.loadFromFile("spritesheet.png")) {
 			cout << BRIGHT_RED << "Error al cargar la textura 'spritesheet.png'\n" << BRIGHT_WHITE;
-			return 1; // Error crÌtico, salir
+			return 1; // Error cr√≠tico, salir
 		}
 
 		// --- RESETEO DE VARIABLES GLOBALES ---
-		// °VITAL para que cada partida nueva empiece de cero!
+		// ¬°VITAL para que cada partida nueva empiece de cero!
 		timer = 0;// Temporizador general
 		cadencia = 125;// Velocidad de disparo enemiga
-		dirEnemies = 1;// DirecciÛn inicial de enemigos
+		dirEnemies = 1;// Direcci√≥n inicial de enemigos
 		enemiesKilled = 0;// Resetear contador de enemigos eliminados
 		bulletsEnemies.clear(); // Limpia las balas de la partida anterior
 		bulletActive = false;// La bala del jugador empieza inactiva
 
-		// 0 = jugando, 1 = ganÛ, 2 = perdiÛ
+		// 0 = jugando, 1 = gan√≥, 2 = perdi√≥
 		int gameResult = 0;// Variable que almacena el resultado del juego
 		// ------------------------------------
 
 		// Crear al jugador
-		Player player(288, 555, spritesheet);// PosiciÛn inicial del jugador (288, 555)
+		Player player(288, 555, spritesheet);// Posici√≥n inicial del jugador (288, 555)
 
-		// Crear una bala "placeholder" para el jugador (se reemplazar· al disparar)
-		Bullet bulletPlayer(0, 0, spritesheet, IntRect(0, 0, 0, 0), 0);// PosiciÛn y tamaÒo irrelevantes
+		// Crear una bala "placeholder" para el jugador (se reemplazar√° al disparar)
+		Bullet bulletPlayer(0, 0, spritesheet, IntRect(0, 0, 0, 0), 0);// Posici√≥n y tama√±o irrelevantes
 
 		// Crear la matriz 2D de enemigos (7 filas, 12 columnas)
 		vector<vector<Enemie>> enemies(7, vector<Enemie>(12, Enemie(0, 0, spritesheet, Vector2f(0, 0))));// Inicializar con enemigos "placeholder"
@@ -125,8 +125,8 @@ int main() {
 		for (int i = 0; i < (int)enemies.size(); i++) { // 'i' es la fila
 			for (int j = 0; j < (int)enemies[i].size(); j++) { // 'j' es la columna
 
-				// Seleccionar el sprite correcto seg˙n la fila
-				if (i == 0) { // Fila 0 (la m·s lejana)
+				// Seleccionar el sprite correcto seg√∫n la fila
+				if (i == 0) { // Fila 0 (la m√°s lejana)
 					sectionSpritesheet = Vector2f(0, 0);// Coordenada del sprite en el spritesheet
 				}
 				else if (i < 3) { // Filas 1 y 2
@@ -135,27 +135,27 @@ int main() {
 				else if (i < 5) { // Filas 3 y 4
 					sectionSpritesheet = Vector2f(0, 18 + (8 * 4 + 4) * 2);// Coordenada del sprite en el spritesheet
 				}
-				else if (i < 7) { // Filas 5 y 6 (las m·s cercanas)
+				else if (i < 7) { // Filas 5 y 6 (las m√°s cercanas)
 					sectionSpritesheet = Vector2f(0, 27 + (8 * 4 + 4) * 3);// Coordenada del sprite en el spritesheet
 				}
 
-				// Crear el enemigo en su posiciÛn de cuadrÌcula
-				enemies[i][j] = Enemie(j * 30 + 24, i * 30 + 24, spritesheet, sectionSpritesheet);// PosiciÛn (x, y) del enemigo
+				// Crear el enemigo en su posici√≥n de cuadr√≠cula
+				enemies[i][j] = Enemie(j * 30 + 24, i * 30 + 24, spritesheet, sectionSpritesheet);// Posici√≥n (x, y) del enemigo
 			}
 		}
 
 		// Crear los 3 muros
 		vector<Muro> muro(3, Muro(0, 0, spritesheet));// Inicializar con muros "placeholder"
 		for (int i = 0; i < 3; i++) {
-			muro[i] = Muro(70 + 200 * i, 460, spritesheet);// PosiciÛn (x, y) de cada muro
+			muro[i] = Muro(70 + 200 * i, 460, spritesheet);// Posici√≥n (x, y) de cada muro
 		}
 
 		// Crear la ventana del juego
-		RenderWindow window(VideoMode(600, 600), "Space Invaders");// TÌtulo de la ventana
+		RenderWindow window(VideoMode(600, 600), "Space Invaders");// T√≠tulo de la ventana
 		window.setFramerateLimit(60); // Limitar a 60 FPS
 
 		// 3. BUCLE DEL JUEGO (SFML)
-		// Este bucle se ejecuta 60 veces por segundo (o hasta el lÌmite)
+		// Este bucle se ejecuta 60 veces por segundo (o hasta el l√≠mite)
 		while (window.isOpen()) {
 
 			// Procesar eventos (input, cerrar ventana, etc.)
@@ -163,39 +163,39 @@ int main() {
 			while (window.pollEvent(event)) {
 				// Manejar cierre manual de ventana (clic en la 'X')
 				if (event.type == Event::Closed) {
-					gameResult = 0; // 0 significa que el usuario cerrÛ, no ganÛ ni perdiÛ
+					gameResult = 0; // 0 significa que el usuario cerr√≥, no gan√≥ ni perdi√≥
 					window.close();// Cerrar la ventana
 				}
 			}
 
-			// Si el juego ya terminÛ (se estableciÛ gameResult), salimos del bucle
+			// Si el juego ya termin√≥ (se estableci√≥ gameResult), salimos del bucle
 			if (gameResult != 0) {
 				break;// Salir del bucle 'while (window.isOpen())'
 			}
 
-			// --- Actualizar la lÛgica del juego ---
+			// --- Actualizar la l√≥gica del juego ---
 			UpdatePlayer(player, bulletPlayer);     // Mover jugador y disparar
 			UpdateBulletPlayer(bulletPlayer, enemies); // Mover bala jugador y colisiones
 			UpdateEnemies(enemies);                 // Mover enemigos y disparar
 			UpdateBulletsEnemies(player);             // Mover balas enemigas y colisiones
 			UpdateMuro(muro, bulletPlayer);         // Colisiones de balas con muros
 
-			// --- L”GICA DE FIN DE JUEGO ---
+			// --- L√ìGICA DE FIN DE JUEGO ---
 
-			// CondiciÛn de PÈrdida 1: El jugador muere
+			// Condici√≥n de P√©rdida 1: El jugador muere
 			if (!player.Vivo()) {
-				gameResult = 2; // 2 = PerdiÛ
+				gameResult = 2; // 2 = Perdi√≥
 				window.close(); // Cerrar ventana INMEDIATAMENTE
 				break;          // Salir del bucle 'while (window.isOpen())'
 			}
 
-			// CondiciÛn de PÈrdida 2: Enemigos llegan abajo
+			// Condici√≥n de P√©rdida 2: Enemigos llegan abajo
 			if (gameResult == 0) // Chequear solo si el juego no ha terminado
 			{
 				for (int i = 0; i < (int)enemies.size(); i++) {
 					for (int j = 0; j < (int)enemies[i].size(); j++) {
 						if (enemies[i][j].Pos().y >= 480) { // Si un enemigo toca la zona de muros
-							gameResult = 2; // 2 = PerdiÛ
+							gameResult = 2; // 2 = Perdi√≥
 							window.close(); // Cerrar ventana INMEDIATAMENTE
 							break;// Salir del bucle interior
 						}
@@ -204,17 +204,17 @@ int main() {
 				}
 			}
 
-			// CondiciÛn de Victoria: No quedan enemigos
+			// Condici√≥n de Victoria: No quedan enemigos
 			if (gameResult == 0) // Chequear solo si el juego no ha terminado
 			{
 				cantEnemies = 0; // Resetear contador
-				// Contar cu·ntos enemigos quedan vivos
+				// Contar cu√°ntos enemigos quedan vivos
 				for (int i = 0; i < (int)enemies.size(); i++) {
-					cantEnemies += (int)enemies[i].size(); // Sumar el tamaÒo de cada vector fila
+					cantEnemies += (int)enemies[i].size(); // Sumar el tama√±o de cada vector fila
 				}
 
 				if (cantEnemies == 0) {
-					gameResult = 1; // 1 = GanÛ
+					gameResult = 1; // 1 = Gan√≥
 					window.close(); // Cerrar ventana INMEDIATAMENTE
 					break;// Salir del bucle 'while (window.isOpen())'
 				}
@@ -228,7 +228,7 @@ int main() {
 				window.draw(bulletsEnemies[i]);// Dibujar cada bala enemiga
 			}
 
-			// Dibujar bala del jugador (si est· activa)
+			// Dibujar bala del jugador (si est√° activa)
 			if (bulletActive) window.draw(bulletPlayer);// Dibujar bala del jugador
 
 			// Dibujar a todos los enemigos
@@ -241,7 +241,7 @@ int main() {
 			// Dibujar los 3 muros
 			for (int i = 0; i < 3; i++) window.draw(muro[i]);// Dibujar cada muro
 
-			// Dibujar al jugador (al final para que estÈ por encima de todo)
+			// Dibujar al jugador (al final para que est√© por encima de todo)
 			window.draw(player);// Dibujar al jugador
 
 			// Mostrar el fotograma dibujado en la ventana
@@ -249,78 +249,78 @@ int main() {
 		} // --- FIN DE 'while (window.isOpen())' ---
 
 
-		// 4. MOSTRAR RESULTADO Y GUARDAR PUNTUACI”N
-		// Esta secciÛn se ejecuta DESPU…S de que la ventana del juego se cerrÛ.
+		// 4. MOSTRAR RESULTADO Y GUARDAR PUNTUACI√ìN
+		// Esta secci√≥n se ejecuta DESPU√âS de que la ventana del juego se cerr√≥.
 		system("cls"); // Limpia la terminal
 
-		if (gameResult == 1) // Si ganÛ
+		if (gameResult == 1) // Si gan√≥
 		{
 			cout << BRIGHT_YELLOW << "============================\n";
 			cout << "	GANASTE\n";
 			cout << "============================\n" << BRIGHT_WHITE;
-			saveScore(true); // Guardar puntuaciÛn (indicando victoria)
+			saveScore(true); // Guardar puntuaci√≥n (indicando victoria)
 		}
-		else if (gameResult == 2) // Si perdiÛ
+		else if (gameResult == 2) // Si perdi√≥
 		{
 			cout << BRIGHT_RED << "============================\n";
 			cout << "	PERDISTE\n";
 			cout << "============================\n" << BRIGHT_WHITE;
-			saveScore(false); // Guardar puntuaciÛn (indicando derrota)
+			saveScore(false); // Guardar puntuaci√≥n (indicando derrota)
 		}
-		// Si gameResult == 0 (cierre manual), no hace nada y vuelve al men˙.
+		// Si gameResult == 0 (cierre manual), no hace nada y vuelve al men√∫.
 
 
-		// 5. MEN⁄ POST-JUEGO
-		// Solo mostrar el men˙ post-juego si se ganÛ o perdiÛ (gameResult != 0)
-		bool inPostGameMenu = (gameResult != 0);// true = en men˙ post-juego, false = salir al men˙ principal
-		while (inPostGameMenu)// Bucle del men˙ post-juego
+		// 5. MEN√ö POST-JUEGO
+		// Solo mostrar el men√∫ post-juego si se gan√≥ o perdi√≥ (gameResult != 0)
+		bool inPostGameMenu = (gameResult != 0);// true = en men√∫ post-juego, false = salir al men√∫ principal
+		while (inPostGameMenu)// Bucle del men√∫ post-juego
 		{
-			int postChoice = showPostGameMenu(); // Esperar selecciÛn
+			int postChoice = showPostGameMenu(); // Esperar selecci√≥n
 
 			switch (postChoice) {
-			case 1: // "Volver al men˙ principal"
+			case 1: // "Volver al men√∫ principal"
 				inPostGameMenu = false; // Sale del bucle post-juego
-				// El 'while(true)' principal se reiniciar·, volviendo al men˙
+				// El 'while(true)' principal se reiniciar√°, volviendo al men√∫
 				break;
 			case 2: // "Scoreking"
-				showScorekingMenu(); // Muestra el submen˙ de puntuaciones
+				showScorekingMenu(); // Muestra el submen√∫ de puntuaciones
 				// Permanece en el bucle post-juego
 				break;
 			case 3: // "Salir"
 				cout << BRIGHT_BLUE << "Saliendo del juego...\n" << BRIGHT_WHITE;
-				return 0; // Sale de toda la aplicaciÛn
+				return 0; // Sale de toda la aplicaci√≥n
 			}
 		} // --- FIN DE 'while (inPostGameMenu)' ---
 
-	} // --- FIN DE 'while (true)' (Bucle de aplicaciÛn) ---
+	} // --- FIN DE 'while (true)' (Bucle de aplicaci√≥n) ---
 
 	return 0; // Fin del 'main'
 }
 
 // -------------------------------------------------------------
-// FUNCI”N PARA GUARDAR LA PUNTUACI”N EN JSON
+// FUNCI√ìN PARA GUARDAR LA PUNTUACI√ìN EN JSON
 // -------------------------------------------------------------
 void saveScore(bool won) {
 
-	// 1. Calcular PuntuaciÛn
+	// 1. Calcular Puntuaci√≥n
 	int finalScore = enemiesKilled * 10;// Cada enemigo vale 10 puntos
 	cout << "\nEnemigos eliminados: " << BRIGHT_CYAN << enemiesKilled << "\n" << BRIGHT_WHITE;
 	cout << "Puntuacion obtenida: " << BRIGHT_CYAN << finalScore << "\n" << BRIGHT_WHITE;
 
-	// No preguntar por nombre si la puntuaciÛn es 0 Y perdiÛ
+	// No preguntar por nombre si la puntuaci√≥n es 0 Y perdi√≥
 	if (finalScore == 0 && !won) {
 		cout << BRIGHT_YELLOW "\nNo se guardara la puntuacion ya que es 0.\n";
 		cout << "Presiona ENTER para continuar..." << BRIGHT_WHITE;
 		cin.get();// Pausa para que el jugador lea el mensaje
-		return;// Salir de la funciÛn sin guardar
+		return;// Salir de la funci√≥n sin guardar
 	}
 
 	// 2. Pedir Nombre al Jugador
 	string playerName;// Variable para almacenar el nombre del jugador
 	cout << BRIGHT_GREEN << "\nIngresa tu nombre para el Scoreking: " << BRIGHT_WHITE;
 
-	// 'getline' lee la lÌnea completa (incluyendo espacios)
-	// Funciona gracias al 'cin.ignore' en los men˙s
+	// 'getline' lee la l√≠nea completa (incluyendo espacios)
+	// Funciona gracias al 'cin.ignore' en los men√∫s
 	getline(cin, playerName);// Leer el nombre del jugador
 
 	// Asignar "Anonimo" si el jugador no ingresa nada
@@ -337,22 +337,22 @@ void saveScore(bool won) {
 			scoreking = json::parse(inputFile);// Cargar el JSON desde el archivo
 		}
 		catch (const json::parse_error& e) {
-			// Si el archivo est· corrupto (JSON mal formado), se reinicia
+			// Si el archivo est√° corrupto (JSON mal formado), se reinicia
 			cerr << "ADVERTENCIA: Scoreking.json corrupto. Reiniciando historial.\n";
-			scoreking = json::array(); // Crear un array JSON vacÌo
+			scoreking = json::array(); // Crear un array JSON vac√≠o
 		}
-		inputFile.close();// Cerrar el archivo despuÈs de leer
+		inputFile.close();// Cerrar el archivo despu√©s de leer
 	}
 	else {
-		// Si el archivo no existe, empezar con un array JSON vacÌo
-		scoreking = json::array();// Crear un array JSON vacÌo
+		// Si el archivo no existe, empezar con un array JSON vac√≠o
+		scoreking = json::array();// Crear un array JSON vac√≠o
 	}
 
-	// 4. Crear el nuevo registro de puntuaciÛn
+	// 4. Crear el nuevo registro de puntuaci√≥n
 	json newScore = {
 		{"nombre", playerName},
 		{"puntuacion", finalScore}
-	};// Crear un objeto JSON con el nombre y la puntuaciÛn
+	};// Crear un objeto JSON con el nombre y la puntuaci√≥n
 
 	// 5. Agregar el nuevo registro al array JSON
 	scoreking.push_back(newScore);// Agregar al final del array
@@ -360,9 +360,9 @@ void saveScore(bool won) {
 	// 6. Guardar el JSON actualizado
 	ofstream outputFile("Scoreking.json"); // Abrir archivo para escribir (sobrescribe)
 	if (outputFile.is_open()) {
-		// 'dump(4)' guarda el JSON con formato legible (4 espacios de indentaciÛn)
+		// 'dump(4)' guarda el JSON con formato legible (4 espacios de indentaci√≥n)
 		outputFile << scoreking.dump(4);// Escribir el JSON en el archivo
-		outputFile.close();// Cerrar el archivo despuÈs de escribir
+		outputFile.close();// Cerrar el archivo despu√©s de escribir
 		cout << BRIGHT_GREEN << "\nPuntuacion guardada exitosamente \n" << BRIGHT_WHITE;
 	}
 	else {
@@ -376,7 +376,7 @@ void saveScore(bool won) {
 }
 
 /**
- * @brief Muestra el men˙ principal en la terminal.
+ * @brief Muestra el men√∫ principal en la terminal.
  * @return true si el usuario quiere jugar, false si quiere salir.
  */
 bool showTerminalMenu() {
@@ -393,21 +393,21 @@ bool showTerminalMenu() {
 		cout << BRIGHT_CYAN << "============================\n" << BRIGHT_WHITE;
 		cout << BRIGHT_YELLOW << "Elige una opcion: " << BRIGHT_WHITE;
 
-		int choice = 0;// Variable para almacenar la elecciÛn del usuario
-		cin >> choice;// Leer la elecciÛn del usuario
+		int choice = 0;// Variable para almacenar la elecci√≥n del usuario
+		cin >> choice;// Leer la elecci√≥n del usuario
 
-		// --- ValidaciÛn de entrada ---
-		if (cin.fail()) { // Si el usuario no ingresÛ un n˙mero (ej. "abc")
+		// --- Validaci√≥n de entrada ---
+		if (cin.fail()) { // Si el usuario no ingres√≥ un n√∫mero (ej. "abc")
 			cin.clear(); // Limpiar la bandera de error de 'cin'
-			// Ignorar todo lo que est· en el buffer de entrada hasta el salto de lÌnea
+			// Ignorar todo lo que est√° en el buffer de entrada hasta el salto de l√≠nea
 			cin.ignore(numeric_limits<streamsize>::max(), '\n');// Limpiar el buffer
 			cout << BRIGHT_RED << "Entrada invalida. Por favor, escribe un numero.\n" << BRIGHT_WHITE;
 			cout << BRIGHT_YELLOW << "Presiona ENTER para continuar..." << BRIGHT_WHITE;
 			cin.get(); // Esperar un ENTER
 		}
 		else {
-			// Limpiar el buffer INMEDIATAMENTE despuÈs de leer el n˙mero
-			// Esto es VITAL para que 'getline' funcione correctamente m·s tarde
+			// Limpiar el buffer INMEDIATAMENTE despu√©s de leer el n√∫mero
+			// Esto es VITAL para que 'getline' funcione correctamente m√°s tarde
 			cin.ignore(numeric_limits<streamsize>::max(), '\n');// Limpiar el buffer
 
 			switch (choice) {
@@ -415,16 +415,16 @@ bool showTerminalMenu() {
 				return true; // Indica "Jugar"
 
 			case 2:
-				showScorekingMenu(); // Llama al submen˙ de puntuaciones
-				break; // Vuelve al 'while(true)' de este men˙
+				showScorekingMenu(); // Llama al submen√∫ de puntuaciones
+				break; // Vuelve al 'while(true)' de este men√∫
 
 			case 3:
 				showInstructions();// Muestra las instrucciones
-				break; // Vuelve al 'while(true)' de este men˙
+				break; // Vuelve al 'while(true)' de este men√∫
 
 			case 4:
-				showCredits();// Muestra los crÈditos
-				break; // Vuelve al 'while(true)' de este men˙
+				showCredits();// Muestra los cr√©ditos
+				break; // Vuelve al 'while(true)' de este men√∫
 
 			case 5:
 				return false; // Indica "Salir"
@@ -433,62 +433,62 @@ bool showTerminalMenu() {
 				cout << BRIGHT_RED << "Opcion invalida. Por favor, elige un numero del menu.\n" << BRIGHT_WHITE;
 				cout << BRIGHT_YELLOW << "Presiona ENTER para continuar..." << BRIGHT_WHITE;
 				cin.get();// Esperar un ENTER
-				break; // Vuelve al 'while(true)' de este men˙
+				break; // Vuelve al 'while(true)' de este men√∫
 			}
 		}
 	}
 }
 
 /**
- * @brief Actualiza la lÛgica del jugador (movimiento y disparo).
+ * @brief Actualiza la l√≥gica del jugador (movimiento y disparo).
  */
 void UpdatePlayer(Player& player, Bullet& bulletPlayer) {
-	player.Update(); // Maneja el input (izquierda/derecha) y actualiza la posiciÛn
+	player.Update(); // Maneja el input (izquierda/derecha) y actualiza la posici√≥n
 
-	// Si el jugador presiona 'disparar' Y la bala no est· activa...
+	// Si el jugador presiona 'disparar' Y la bala no est√° activa...
 	if (player.Shoot() && !bulletActive) {
-		// Crear una nueva bala en la posiciÛn del jugador
-		Bullet bullet(player.Pos().x + 24, player.Pos().y + 12, spritesheet, IntRect(13 * 8 + 16, 6 * 8 + 6, 8, 8), -10);// PosiciÛn (x, y), sprite y velocidad (hacia arriba)
-		// Asignarla a la variable 'bulletPlayer' (que est· en 'main')
+		// Crear una nueva bala en la posici√≥n del jugador
+		Bullet bullet(player.Pos().x + 24, player.Pos().y + 12, spritesheet, IntRect(13 * 8 + 16, 6 * 8 + 6, 8, 8), -10);// Posici√≥n (x, y), sprite y velocidad (hacia arriba)
+		// Asignarla a la variable 'bulletPlayer' (que est√° en 'main')
 		bulletPlayer = bullet;// Reemplazar la bala "placeholder"
 		// Marcar la bala como activa
-		bulletActive = true;// La bala ahora est· en pantalla
+		bulletActive = true;// La bala ahora est√° en pantalla
 	}
 }
 
 /**
- * @brief Actualiza la bala del jugador (movimiento y colisiÛn con enemigos).
+ * @brief Actualiza la bala del jugador (movimiento y colisi√≥n con enemigos).
  */
 void UpdateBulletPlayer(Bullet& bulletPlayer, vector<vector<Enemie>>& enemies) {
-	// Solo hacer algo si la bala est· activa
+	// Solo hacer algo si la bala est√° activa
 	if (bulletActive) {
 		bulletPlayer.Update(); // Mover la bala (hacia arriba)
 
 		// Desactivar la bala si sale por la parte superior de la pantalla
 		if (bulletPlayer.Pos().y < -24) bulletActive = false;// Fuera de pantalla
 
-		// Definir el rect·ngulo de colisiÛn de la bala
-		bulletRect = IntRect(bulletPlayer.Pos().x, bulletPlayer.Pos().y, 3, 8);// TamaÒo de la bala
+		// Definir el rect√°ngulo de colisi√≥n de la bala
+		bulletRect = IntRect(bulletPlayer.Pos().x, bulletPlayer.Pos().y, 3, 8);// Tama√±o de la bala
 
-		// --- Comprobar colisiÛn con todos los enemigos ---
+		// --- Comprobar colisi√≥n con todos los enemigos ---
 		for (int i = 0; i < (int)enemies.size(); i++) { // Iterar filas
 			for (int j = 0; j < (int)enemies[i].size(); j++) { // Iterar columnas
-				// Definir el rect·ngulo del enemigo actual
-				enemieRect = IntRect(enemies[i][j].Pos().x, enemies[i][j].Pos().y, 24, 24);// TamaÒo del enemigo
+				// Definir el rect√°ngulo del enemigo actual
+				enemieRect = IntRect(enemies[i][j].Pos().x, enemies[i][j].Pos().y, 24, 24);// Tama√±o del enemigo
 
-				// Comprobar si los rect·ngulos se intersectan
+				// Comprobar si los rect√°ngulos se intersectan
 				if (enemieRect.intersects(bulletRect)) {
 					// Eliminar al enemigo del vector de su fila
 					enemies[i].erase(enemies[i].begin() + j);// Eliminar enemigo
-					enemiesKilled++;      // Incrementar puntuaciÛn
+					enemiesKilled++;      // Incrementar puntuaci√≥n
 					bulletActive = false; // Desactivar la bala
 					break; // Salir del bucle 'j' (columnas)
 				}
 			}
-			if (!bulletActive) break; // Salir del bucle 'i' (filas) si ya hubo colisiÛn
+			if (!bulletActive) break; // Salir del bucle 'i' (filas) si ya hubo colisi√≥n
 		}
 
-		// Si la bala golpeÛ a un enemigo (se desactivÛ)
+		// Si la bala golpe√≥ a un enemigo (se desactiv√≥)
 		if (!bulletActive) {
 			// Aumentar la velocidad de todos los enemigos restantes
 			for (int i = 0; i < (int)enemies.size(); i++) {
@@ -497,18 +497,18 @@ void UpdateBulletPlayer(Bullet& bulletPlayer, vector<vector<Enemie>>& enemies) {
 				}
 			}
 			// Reducir el tiempo entre disparos enemigos (aumentar cadencia)
-			cadencia--;// Disparos m·s frecuentes
+			cadencia--;// Disparos m√°s frecuentes
 		}
 	}
 }
 
 /**
- * @brief Actualiza la lÛgica de los enemigos (movimiento, cambio de direcciÛn y disparo).
+ * @brief Actualiza la l√≥gica de los enemigos (movimiento, cambio de direcci√≥n y disparo).
  */
 void UpdateEnemies(vector<vector<Enemie>>& enemies) {
-	// 1. Encontrar los bordes (el enemigo m·s a la izquierda y m·s a la derecha)
-	maxX = 0;// Inicializar al mÌnimo posible
-	minX = 600;// Inicializar al m·ximo posible
+	// 1. Encontrar los bordes (el enemigo m√°s a la izquierda y m√°s a la derecha)
+	maxX = 0;// Inicializar al m√≠nimo posible
+	minX = 600;// Inicializar al m√°ximo posible
 	for (int i = 0; i < (int)enemies.size(); i++) {
 		for (int j = 0; j < (int)enemies[i].size(); j++) {
 			maxX = max(maxX, (int)enemies[i][j].Pos().x + 24 * dirEnemies);// +24 para el ancho del enemigo
@@ -521,38 +521,38 @@ void UpdateEnemies(vector<vector<Enemie>>& enemies) {
 		// Si toca, mover a TODOS los enemigos hacia abajo
 		for (int i = 0; i < (int)enemies.size(); i++) {
 			for (int j = 0; j < (int)enemies[i].size(); j++) {
-				enemies[i][j].ChangeDir(); // Esta funciÛn los mueve hacia abajo
+				enemies[i][j].ChangeDir(); // Esta funci√≥n los mueve hacia abajo
 			}
 		}
-		dirEnemies *= -1; // Invertir la direcciÛn horizontal
+		dirEnemies *= -1; // Invertir la direcci√≥n horizontal
 	}
 
 	// 3. Mover a todos los enemigos horizontalmente
 	for (int i = 0; i < (int)enemies.size(); i++) {
 		for (int j = 0; j < (int)enemies[i].size(); j++) {
-			enemies[i][j].Update(); // Esta funciÛn los mueve horizontalmente
+			enemies[i][j].Update(); // Esta funci√≥n los mueve horizontalmente
 		}
 	}
 
-	// 4. LÛgica de disparo enemigo
+	// 4. L√≥gica de disparo enemigo
 	timer++; // Incrementar el temporizador de disparo
 
-	// Comprobar si el temporizador alcanzÛ la cadencia y si quedan enemigos
+	// Comprobar si el temporizador alcanz√≥ la cadencia y si quedan enemigos
 	if (timer >= cadencia && (int)enemies.size() > 0 && (int)enemies[0].size() > 0) {
 		timer = 0; // Reiniciar temporizador
 		srand(time(NULL)); // Nueva semilla aleatoria
-		// Elegir una columna aleatoria (basado en el tamaÒo de la primera fila)
-		int enem = rand() % (int)enemies[0].size();// Õndice de columna aleatoria
+		// Elegir una columna aleatoria (basado en el tama√±o de la primera fila)
+		int enem = rand() % (int)enemies[0].size();// √çndice de columna aleatoria
 		// Crear una bala desde el enemigo en la FILA 0 de esa columna aleatoria
-		// (Nota: Esta lÛgica hace disparar al enemigo de la fila superior)
-		Bullet bullet = Bullet(enemies[0][enem].Pos().x + 9, enemies[0][enem].Pos().y + 24, spritesheet, IntRect(13 * 8 + 8, 8 * 2 + 2, 8, 8), 10);// PosiciÛn (x, y), sprite y velocidad (hacia abajo)
-		// AÒadir la nueva bala al vector de balas enemigas
+		// (Nota: Esta l√≥gica hace disparar al enemigo de la fila superior)
+		Bullet bullet = Bullet(enemies[0][enem].Pos().x + 9, enemies[0][enem].Pos().y + 24, spritesheet, IntRect(13 * 8 + 8, 8 * 2 + 2, 8, 8), 10);// Posici√≥n (x, y), sprite y velocidad (hacia abajo)
+		// A√±adir la nueva bala al vector de balas enemigas
 		bulletsEnemies.push_back(bullet);// Agregar bala enemiga
-	}// Fin de la lÛgica de disparo
+	}// Fin de la l√≥gica de disparo
 }
 
 /**
- * @brief Actualiza las balas enemigas (movimiento, colisiÛn con jugador, limpieza).
+ * @brief Actualiza las balas enemigas (movimiento, colisi√≥n con jugador, limpieza).
  */
 void UpdateBulletsEnemies(Player& player) {
 	// 1. Mover todas las balas enemigas
@@ -564,72 +564,72 @@ void UpdateBulletsEnemies(Player& player) {
 	for (int i = 0; i < (int)bulletsEnemies.size(); i++) {
 		if (bulletsEnemies[i].Pos().y > 600) {
 			bulletsEnemies.erase(bulletsEnemies.begin() + i);// Eliminar la bala
-			// °IMPORTANTE! Decrementar 'i' para no saltarse el siguiente elemento
-			i--;// Decrementar Ìndice
+			// ¬°IMPORTANTE! Decrementar 'i' para no saltarse el siguiente elemento
+			i--;// Decrementar √≠ndice
 		}
 	}
 
-	// 3. Comprobar colisiÛn con el jugador
-	playerRect = IntRect(player.Pos().x, player.Pos().y + 9, 48, 15);// ¡rea de colisiÛn del jugador (solo la parte superior)
+	// 3. Comprobar colisi√≥n con el jugador
+	playerRect = IntRect(player.Pos().x, player.Pos().y + 9, 48, 15);// √Årea de colisi√≥n del jugador (solo la parte superior)
 	for (int i = 0; i < (int)bulletsEnemies.size(); i++) {
-		bulletRect = IntRect(bulletsEnemies[i].Pos().x, bulletsEnemies[i].Pos().y, 3, 24);// ¡rea de colisiÛn de la bala enemiga
+		bulletRect = IntRect(bulletsEnemies[i].Pos().x, bulletsEnemies[i].Pos().y, 3, 24);// √Årea de colisi√≥n de la bala enemiga
 		// Si la bala del enemigo toca al jugador...
 		if (playerRect.intersects(bulletRect)) {
 			bulletsEnemies.erase(bulletsEnemies.begin() + i); // Eliminar la bala
 			player.QuitarVida(); // Restar una vida al jugador
 			i--; // Decrementar 'i' para no saltarse el siguiente elemento
-		}// Fin de la comprobaciÛn de colisiÛn
-	}// Fin de la iteraciÛn de balas enemigas
+		}// Fin de la comprobaci√≥n de colisi√≥n
+	}// Fin de la iteraci√≥n de balas enemigas
 }
 
 /**
- * @brief Actualiza los muros (colisiÛn con bala de jugador y balas de enemigos).
+ * @brief Actualiza los muros (colisi√≥n con bala de jugador y balas de enemigos).
  */
 void UpdateMuro(vector<Muro>& muro, Bullet& bulletPlayer) {
-	// --- 1. ColisiÛn de la BALA DEL JUGADOR con los muros ---
+	// --- 1. Colisi√≥n de la BALA DEL JUGADOR con los muros ---
 	if (bulletActive) {
-		bulletRect = IntRect(bulletPlayer.Pos().x, bulletPlayer.Pos().y, 3, 8);// Rect·ngulo de la bala del jugador
+		bulletRect = IntRect(bulletPlayer.Pos().x, bulletPlayer.Pos().y, 3, 8);// Rect√°ngulo de la bala del jugador
 		for (int i = 0; i < 3; i++) { // Iterar los 3 muros
 			// Obtener las posiciones de todas las partes del muro 'i'
 			muro[i].Pos(posicionMuro);// Llenar el vector 'posicionMuro'
 			for (int j = 0; j < (int)posicionMuro.size(); j++) { // Iterar las partes del muro
-				muroRect = IntRect(posicionMuro[j].second.x, posicionMuro[j].second.y, 24, 24);// Rect·ngulo de la parte del muro
+				muroRect = IntRect(posicionMuro[j].second.x, posicionMuro[j].second.y, 24, 24);// Rect√°ngulo de la parte del muro
 				// Si la bala del jugador toca una parte del muro...
 				if (muroRect.intersects(bulletRect)) {
-					muro[i].Colision(posicionMuro[j].first, false); // DaÒar el muro
+					muro[i].Colision(posicionMuro[j].first, false); // Da√±ar el muro
 					bulletActive = false; // Desactivar la bala
-				}// Fin de la comprobaciÛn de colisiÛn
-			}// Fin de la iteraciÛn de partes del muro
-			if (!bulletActive) break; // Salir si la bala ya colisionÛ
-		}// Fin de la iteraciÛn de muros
-	}// Fin de la colisiÛn de la bala del jugador
+				}// Fin de la comprobaci√≥n de colisi√≥n
+			}// Fin de la iteraci√≥n de partes del muro
+			if (!bulletActive) break; // Salir si la bala ya colision√≥
+		}// Fin de la iteraci√≥n de muros
+	}// Fin de la colisi√≥n de la bala del jugador
 
-	// --- 2. ColisiÛn de las BALAS ENEMIGAS con los muros ---
+	// --- 2. Colisi√≥n de las BALAS ENEMIGAS con los muros ---
 	bool elim = false; // Flag para saber si una bala fue eliminada
 
 	for (int h = 0; h < (int)bulletsEnemies.size(); h++) { // Iterar TODAS las balas enemigas
-		bulletRect = IntRect(bulletsEnemies[h].Pos().x, bulletsEnemies[h].Pos().y, 3, 8);// Rect·ngulo de la bala enemiga 'h'
+		bulletRect = IntRect(bulletsEnemies[h].Pos().x, bulletsEnemies[h].Pos().y, 3, 8);// Rect√°ngulo de la bala enemiga 'h'
 		for (int i = 0; i < 3; i++) { // Iterar los 3 muros
 			muro[i].Pos(posicionMuro); // Obtener partes del muro 'i'
 			for (int j = 0; j < (int)posicionMuro.size(); j++) { // Iterar las partes del muro
-				muroRect = IntRect(posicionMuro[j].second.x, posicionMuro[j].second.y, 24, 24);// Rect·ngulo de la parte del muro
+				muroRect = IntRect(posicionMuro[j].second.x, posicionMuro[j].second.y, 24, 24);// Rect√°ngulo de la parte del muro
 				// Si la bala enemiga 'h' toca una parte del muro...
 				if (muroRect.intersects(bulletRect)) {
-					muro[i].Colision(posicionMuro[j].first, true); // DaÒar el muro
+					muro[i].Colision(posicionMuro[j].first, true); // Da√±ar el muro
 					bulletsEnemies.erase(bulletsEnemies.begin() + h); // Eliminar la bala
 					elim = true; // Marcar como eliminada
 					h--; // Decrementar 'h' para no saltarse la siguiente bala
 					break; // Salir del bucle 'j' (partes del muro)
-				}// Fin de la comprobaciÛn de colisiÛn
-			}// Fin de la iteraciÛn de partes del muro
+				}// Fin de la comprobaci√≥n de colisi√≥n
+			}// Fin de la iteraci√≥n de partes del muro
 			if (elim) { // Si la bala fue eliminada
 				elim = false; // Resetear el flag
 				break; // Salir del bucle 'i' (muros) e ir a la siguiente bala
-			}// Fin de la comprobaciÛn de eliminaciÛn
-		}// Fin de la iteraciÛn de muros
-	}// Fin de la iteraciÛn de balas enemigas
+			}// Fin de la comprobaci√≥n de eliminaci√≥n
+		}// Fin de la iteraci√≥n de muros
+	}// Fin de la iteraci√≥n de balas enemigas
 
-	// 3. Actualizar el estado visual de los muros (mostrar daÒo)
+	// 3. Actualizar el estado visual de los muros (mostrar da√±o)
 	for (int i = 0; i < 3; i++) muro[i].Update();// Actualizar cada muro
 }// Fin de 'UpdateMuro()'
 
@@ -649,7 +649,7 @@ void showScoreking() {
 	if (inputFile.is_open()) {
 		try {
 			scoreking = json::parse(inputFile);// Intentar parsear el JSON
-			inputFile.close();// Cerrar el archivo despuÈs de leer
+			inputFile.close();// Cerrar el archivo despu√©s de leer
 		}
 		catch (const json::parse_error& e) {
 			cout << BRIGHT_RED << "El archivo Scoreking.json esta corrupto o vacio.\n" << BRIGHT_WHITE;
@@ -658,11 +658,11 @@ void showScoreking() {
 		}// Fin del manejo de errores
 	}// Fin de la carga del archivo JSON
 	else {
-		// Si el archivo no existe, tratarlo como un array vacÌo
-		scoreking = json::array();// Crear un array JSON vacÌo
-	}// Fin de la comprobaciÛn de apertura de archivo
+		// Si el archivo no existe, tratarlo como un array vac√≠o
+		scoreking = json::array();// Crear un array JSON vac√≠o
+	}// Fin de la comprobaci√≥n de apertura de archivo
 
-	// Comprobar que 'scoreking' es un array y no est· vacÌo
+	// Comprobar que 'scoreking' es un array y no est√° vac√≠o
 	if (scoreking.is_array() && !scoreking.empty()) {
 
 		// Crear un vector de pares (puntuacion, nombre) para poder ordenarlo
@@ -670,36 +670,36 @@ void showScoreking() {
 		for (const auto& record : scoreking) {
 			// Validar que el registro tenga los campos correctos
 			if (record.contains("puntuacion") && record.contains("nombre") && record["puntuacion"].is_number_integer()) {
-				// Filtro adicional: No mostrar nombres vacÌos
+				// Filtro adicional: No mostrar nombres vac√≠os
 				if (!record["nombre"].get<string>().empty()) {
 					scores.push_back({ record["puntuacion"], record["nombre"] });// Agregar al vector
-				}// Fin del filtro de nombre vacÌo
-			}// Fin de la validaciÛn de campos
-		}// Fin de la iteraciÛn de registros
+				}// Fin del filtro de nombre vac√≠o
+			}// Fin de la validaci√≥n de campos
+		}// Fin de la iteraci√≥n de registros
 
 		if (scores.empty()) {
 			cout << BRIGHT_BLUE << "Aun no hay puntuaciones registradas.\n" << BRIGHT_WHITE;
-			cout << BRIGHT_GREEN << "°Juega para ser el primero en el Scoreking!\n" << BRIGHT_WHITE;
-		}// Fin de la comprobaciÛn de vector vacÌo
+			cout << BRIGHT_GREEN << "¬°Juega para ser el primero en el Scoreking!\n" << BRIGHT_WHITE;
+		}// Fin de la comprobaci√≥n de vector vac√≠o
 		else {
-			// Ordenar el vector de mayor a menor puntuaciÛn
+			// Ordenar el vector de mayor a menor puntuaci√≥n
 			sort(scores.begin(), scores.end(), [](const pair<int, string>& a, const pair<int, string>& b) {
 				return a.first > b.first; // Orden descendente
-				});// Fin de la funciÛn de comparaciÛn
+				});// Fin de la funci√≥n de comparaci√≥n
 
 			// Mostrar la tabla formateada (Top 10)
 			cout << BRIGHT_CYAN << "| PUESTO | PUNTUACION | NOMBRE\n";
 			cout << "|--------|------------|--------------------\n" << BRIGHT_WHITE;
 			for (size_t i = 0; i < min((size_t)10, scores.size()); ++i) {
 				// 'printf' para formatear la salida en columnas alineadas
-				printf("| %-6zu | %-10d | %s\n", i + 1, scores[i].first, scores[i].second.c_str());// Mostrar puesto, puntuaciÛn y nombre
-			}// Fin del bucle de visualizaciÛn
-		}// Fin de la comprobaciÛn de scores no vacÌo
-	}// Fin de la comprobaciÛn de array no vacÌo
+				printf("| %-6zu | %-10d | %s\n", i + 1, scores[i].first, scores[i].second.c_str());// Mostrar puesto, puntuaci√≥n y nombre
+			}// Fin del bucle de visualizaci√≥n
+		}// Fin de la comprobaci√≥n de scores no vac√≠o
+	}// Fin de la comprobaci√≥n de array no vac√≠o
 	else {
-		// Mensaje si 'Scoreking.json' no existe o est· vacÌo
+		// Mensaje si 'Scoreking.json' no existe o est√° vac√≠o
 		cout << BRIGHT_BLUE << "Aun no hay puntuaciones registradas.\n" << BRIGHT_WHITE;
-		cout << BRIGHT_GREEN << "°Juega para ser el primero en el Scoreking!\n" << BRIGHT_WHITE;
+		cout << BRIGHT_GREEN << "¬°Juega para ser el primero en el Scoreking!\n" << BRIGHT_WHITE;
 	}
 
 	cout << BRIGHT_YELLOW << "\nPresiona ENTER para volver al menu..." << BRIGHT_WHITE;
@@ -707,8 +707,8 @@ void showScoreking() {
 }// Fin de 'showScoreking()'
 
 /**
-†* @brief Muestra el submen˙ de Scoreking (Mostrar, Eliminar, Volver)
-†*/
+¬†* @brief Muestra el submen√∫ de Scoreking (Mostrar, Eliminar, Volver)
+¬†*/
 void showScorekingMenu() {
 	while (true) {
 		system("cls");// Limpiar la consola
@@ -721,17 +721,17 @@ void showScorekingMenu() {
 		cout << BRIGHT_GREEN << "===============================\n" << BRIGHT_WHITE;
 		cout << BRIGHT_YELLOW << "Elige una opcion: " << BRIGHT_WHITE;
 
-		int choice = 0;// Variable para almacenar la elecciÛn del usuario
-		cin >> choice;// Leer la elecciÛn del usuario
+		int choice = 0;// Variable para almacenar la elecci√≥n del usuario
+		cin >> choice;// Leer la elecci√≥n del usuario
 
-		// ValidaciÛn de entrada est·ndar
+		// Validaci√≥n de entrada est√°ndar
 		if (cin.fail()) {
 			cin.clear();// Limpiar la bandera de error de 'cin'
 			cin.ignore(numeric_limits<streamsize>::max(), '\n');// Limpiar buffer
 			cout << BRIGHT_RED << "Entrada invalida. Por favor, escribe un numero.\n" << BRIGHT_WHITE;
 			cout << BRIGHT_YELLOW << "Presiona ENTER para continuar..." << BRIGHT_WHITE;
 			cin.get();// Esperar un ENTER
-		}// Fin de la validaciÛn de entrada
+		}// Fin de la validaci√≥n de entrada
 		else {
 			cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Limpiar buffer
 
@@ -743,20 +743,20 @@ void showScorekingMenu() {
 				deleteMyScore(); // Borrar entradas
 				break;
 			case 3:
-				return; // Salir de este men˙ y volver al anterior
+				return; // Salir de este men√∫ y volver al anterior
 			default:
 				cout << BRIGHT_RED << "Opcion invalida. Por favor, elige un numero del menu.\n" << BRIGHT_WHITE;
 				cout << BRIGHT_YELLOW << "Presiona ENTER para continuar..." << BRIGHT_WHITE;
 				cin.get();// Esperar un ENTER
 				break;
 			}// Fin del 'switch'
-		}// Fin de la validaciÛn de entrada	
+		}// Fin de la validaci√≥n de entrada	
 	}// --- FIN DE 'while (true)' ---
 }// Fin de 'showScorekingMenu()'
 
 /**
-†* @brief Pide un nombre al usuario y elimina todas las entradas coincidentes de Scoreking.json
-†*/
+¬†* @brief Pide un nombre al usuario y elimina todas las entradas coincidentes de Scoreking.json
+¬†*/
 void deleteMyScore() {
 	system("cls");// Limpiar la consola
 	cout << BRIGHT_YELLOW << "=================================\n" << BRIGHT_WHITE;
@@ -771,8 +771,8 @@ void deleteMyScore() {
 		cout << BRIGHT_YELLOW << "\nNombre vacio. No se elimino nada.\n";
 		cout << "Presiona ENTER para continuar..." << BRIGHT_WHITE;
 		cin.get();// Pausa
-		return;// Salir de la funciÛn sin eliminar
-	}// Fin de la comprobaciÛn de nombre vacÌo
+		return;// Salir de la funci√≥n sin eliminar
+	}// Fin de la comprobaci√≥n de nombre vac√≠o
 
 	// 1. Cargar el JSON
 	json scoreking;// Variable JSON para almacenar las puntuaciones
@@ -781,8 +781,8 @@ void deleteMyScore() {
 		cout << BRIGHT_YELLOW << "\nNo se encontro Scoreking.json. No hay nada que eliminar.\n";
 		cout << "Presiona ENTER para continuar..." << BRIGHT_WHITE;
 		cin.get();// Pausa
-		return;// Salir de la funciÛn
-	}// Fin de la comprobaciÛn de apertura de archivo
+		return;// Salir de la funci√≥n
+	}// Fin de la comprobaci√≥n de apertura de archivo
 
 	// Manejo de JSON corrupto
 	try {
@@ -793,32 +793,32 @@ void deleteMyScore() {
 		cout << BRIGHT_YELLOW << "Presiona ENTER para continuar..." << BRIGHT_WHITE;
 		cin.get();// Pausa
 		inputFile.close();// Cerrar el archivo
-		return;// Salir de la funciÛn
+		return;// Salir de la funci√≥n
 	}// Fin del manejo de errores
-	inputFile.close();// Cerrar el archivo despuÈs de leer
+	inputFile.close();// Cerrar el archivo despu√©s de leer
 
 	if (!scoreking.is_array() || scoreking.empty()) {
 		cout << BRIGHT_YELLOW << "\nScoreking esta vacio. No hay nada que eliminar.\n";
 		cout << "Presiona ENTER para continuar..." << BRIGHT_WHITE;
 		cin.get();// Pausa
-		return;// Salir de la funciÛn
-	}// Fin de la comprobaciÛn de array vacÌo
+		return;// Salir de la funci√≥n
+	}// Fin de la comprobaci√≥n de array vac√≠o
 
 	// 2. Crear un nuevo JSON filtrado
-	json newScoreking = json::array(); // Un array vacÌo
-	bool found = false;// Flag para saber si se encontrÛ alguna coincidencia
+	json newScoreking = json::array(); // Un array vac√≠o
+	bool found = false;// Flag para saber si se encontr√≥ alguna coincidencia
 	// Iterar sobre el JSON cargado
 	for (const auto& record : scoreking) {
-		// Si el nombre NO coincide, se aÒade al nuevo array
+		// Si el nombre NO coincide, se a√±ade al nuevo array
 		if (record.contains("nombre") && record["nombre"].get<string>() == nameToDelete) {
-			found = true;// Se encontrÛ una coincidencia
+			found = true;// Se encontr√≥ una coincidencia
 			// No agregar este registro (esto lo "elimina")
 		}// Si no coincide...
 		else {
 			// Conservar este registro
 			newScoreking.push_back(record);
-		}// Fin de la comprobaciÛn de nombre
-	}// Fin de la iteraciÛn de registros
+		}// Fin de la comprobaci√≥n de nombre
+	}// Fin de la iteraci√≥n de registros
 
 	// 3. Informar al usuario y guardar
 	if (!found) {
@@ -831,11 +831,11 @@ void deleteMyScore() {
 			outputFile << newScoreking.dump(4); // Guardar el array sin las entradas eliminadas
 			outputFile.close();// Cerrar el archivo
 			cout << BRIGHT_GREEN << "\nSe eliminaron todas las puntuaciones de: " << BRIGHT_WHITE << nameToDelete << "\n";
-		}// Fin de la comprobaciÛn de apertura de archivo
+		}// Fin de la comprobaci√≥n de apertura de archivo
 		else {
 			cerr << BRIGHT_RED << "\nERROR: No se pudo guardar el Scoreking.json actualizado.\n" << BRIGHT_WHITE;
-		}// Fin de la comprobaciÛn de apertura de archivo
-	}// Fin de la comprobaciÛn de coincidencias
+		}// Fin de la comprobaci√≥n de apertura de archivo
+	}// Fin de la comprobaci√≥n de coincidencias
 
 	cout << BRIGHT_YELLOW << "Presiona ENTER para continuar..." << BRIGHT_WHITE;
 	cin.get();// Pausa
@@ -859,7 +859,7 @@ void showInstructions() {
 }// Fin de 'showInstructions()'
 
 /**
- * @brief Muestra la pantalla de crÈditos.
+ * @brief Muestra la pantalla de cr√©ditos.
  */
 void showCredits() {
 	system("cls");// Limpiar la consola
@@ -867,18 +867,18 @@ void showCredits() {
 	cout << BRIGHT_MAGENTA << "	CREDITOS\n" << BRIGHT_WHITE;
 	cout << BRIGHT_CYAN << "============================\n" << BRIGHT_WHITE;
 	cout << BRIGHT_MAGENTA << "Juego creado por:\n" << BRIGHT_WHITE;
-	cout << BRIGHT_BLUE << "(Tu Nombre Aqui)\n" << BRIGHT_WHITE;
-	cout << BRIGHT_BLUE << "(Tu Nombre Aqui)\n" << BRIGHT_WHITE;
-	cout << BRIGHT_BLUE << "(Tu Nombre Aqui)\n" << BRIGHT_WHITE;
+	cout << BRIGHT_BLUE << "ALEJANDRO KAREL REYES GUIDO\n" << BRIGHT_WHITE;
+	cout << BRIGHT_BLUE << "KENDAL ESTIVEN ROSALES GUTIERRES\n" << BRIGHT_WHITE;
+	cout << BRIGHT_BLUE << "ANONIMUS\n" << BRIGHT_WHITE;
 	cout << BRIGHT_MAGENTA << "Programado en C++ con SFML.\n" << BRIGHT_WHITE;
 	cout << BRIGHT_YELLOW << "\n\nPresiona ENTER para volver al menu..." << BRIGHT_WHITE;
 	cin.get(); // Pausa
 }
 
 /**
-†* @brief Muestra el men˙ de fin de juego y devuelve la selecciÛn del usuario.
-†* @return 1 (Men˙ Principal), 2 (Scoreking), 3 (Salir)
-†*/
+¬†* @brief Muestra el men√∫ de fin de juego y devuelve la selecci√≥n del usuario.
+¬†* @return 1 (Men√∫ Principal), 2 (Scoreking), 3 (Salir)
+¬†*/
 int showPostGameMenu() {
 	while (true) {
 		system("cls");// Limpiar la consola
@@ -891,25 +891,25 @@ int showPostGameMenu() {
 		cout << BRIGHT_CYAN << "==========================\n" << BRIGHT_WHITE;
 		cout << BRIGHT_YELLOW << "Elige una opcion: " << BRIGHT_WHITE;
 
-		int choice = 0;// Variable para almacenar la elecciÛn del usuario
-		cin >> choice;// Leer la elecciÛn del usuario
+		int choice = 0;// Variable para almacenar la elecci√≥n del usuario
+		cin >> choice;// Leer la elecci√≥n del usuario
 
-		// ValidaciÛn de entrada est·ndar
+		// Validaci√≥n de entrada est√°ndar
 		if (cin.fail()) {
 			cin.clear();// Limpiar la bandera de error de 'cin'
 			cin.ignore(numeric_limits<streamsize>::max(), '\n');// Limpiar buffer
 			cout << BRIGHT_RED << "Entrada invalida. Por favor, escribe un numero.\n" << BRIGHT_WHITE;
 			cout << BRIGHT_YELLOW << "Presiona ENTER para continuar..." << BRIGHT_WHITE;
 			cin.get();// Esperar un ENTER
-		}// Fin de la validaciÛn de entrada
+		}// Fin de la validaci√≥n de entrada
 		else {
 			cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Limpiar buffer
 
 			switch (choice) {
 			case 1:
-				return 1; // Volver al men˙
+				return 1; // Volver al men√∫
 			case 2:
-				return 2; // Ver Scoreking (el bucle en 'main' llamar· a 'showScorekingMenu')
+				return 2; // Ver Scoreking (el bucle en 'main' llamar√° a 'showScorekingMenu')
 			case 3:
 				return 3; // Salir
 			default:
@@ -918,6 +918,6 @@ int showPostGameMenu() {
 				cin.get();// Esperar un ENTER
 				break;
 			}// Fin del 'switch'
-		}// Fin de la validaciÛn de entrada
+		}// Fin de la validaci√≥n de entrada
 	}// --- FIN DE 'while (true)' ---
 }// Fin de 'showPostGameMenu()'|
