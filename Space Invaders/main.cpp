@@ -869,7 +869,7 @@ void showCredits() {
 	cout << BRIGHT_MAGENTA << "Juego creado por:\n" << BRIGHT_WHITE;
 	cout << BRIGHT_BLUE << "ALEJANDRO KAREL REYES GUIDO\n" << BRIGHT_WHITE;
 	cout << BRIGHT_BLUE << "KENDAL ESTIVEN ROSALES GUTIERRES\n" << BRIGHT_WHITE;
-	cout << BRIGHT_BLUE << "ANONIMUS\n" << BRIGHT_WHITE;
+	cout << BRIGHT_BLUE << "CHRISMEL JESÚS RAMOS SOTO\n" << BRIGHT_WHITE;
 	cout << BRIGHT_MAGENTA << "Programado en C++ con SFML.\n" << BRIGHT_WHITE;
 	cout << BRIGHT_YELLOW << "\n\nPresiona ENTER para volver al menu..." << BRIGHT_WHITE;
 	cin.get(); // Pausa
