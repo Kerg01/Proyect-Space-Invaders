@@ -132,6 +132,7 @@
     <ClCompile Include="Bullet.cpp" />
     <ClCompile Include="Enemie.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Player.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Scoreking.json" />
@@ -139,6 +140,7 @@
   <ItemGroup>
     <ClInclude Include="Bullet.hpp" />
     <ClInclude Include="Enemie.hpp" />
+    <ClInclude Include="Player.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
