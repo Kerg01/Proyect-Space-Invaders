@@ -132,6 +132,7 @@
     <ClCompile Include="Bullet.cpp" />
     <ClCompile Include="Enemie.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Muro.cpp" />
     <ClCompile Include="Player.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -140,7 +141,11 @@
   <ItemGroup>
     <ClInclude Include="Bullet.hpp" />
     <ClInclude Include="Enemie.hpp" />
+    <ClInclude Include="Muro.hpp" />
     <ClInclude Include="Player.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="spritesheet.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
